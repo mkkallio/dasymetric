@@ -14,7 +14,7 @@
 #' @param n Number of iterations when using pycnophylactic interpolation. 
 #'   Default \code{25}.
 #' @param intensive Whether the pycnophylactic variable is intensive (density,
-#'   like runoff in mm), or not (in which case it is extensive, or counts like
+#'   like runoff in depth), or not (in which case it is extensive, or counts like
 #'   runoff in volume). 
 #' @param weights Name of a column in \code{river} to be used directly as 
 #'   weights. Defaults to \code{NULL}. See Details.
@@ -40,14 +40,16 @@
 #' }
 #'  
 #' @export
-interpolate_aw <- function(source, 
-                           target,
-                           dasymetric = NULL,
-                           pycnophylactic = NULL,
-                           n = 20,
-                           intensive = NULL,
-                           aoi=NULL, 
-                           verbose=FALSE) {
+interpolate <- function(source, 
+                        target,
+                        variable,
+                        dasymetric = NULL,
+                        pycnophylactic = NULL,
+                        pycno_iter = 20,
+                        pycno_each_ts = FALSE,
+                        intensive = NULL,
+                        aoi=NULL, 
+                        verbose=FALSE) {
     
     # --------------------------------------------------------------------------
     # test
@@ -60,7 +62,16 @@ interpolate_aw <- function(source,
     if(!test) stop("target should be of class 'zones', obtained with function ",
                    "create_target()")
     
-  
+    
+    #### TODO: TEST VARIABLE INPUT
+    
+    test <- hasName(source, variable) 
+    if(!test) {
+        test <- hasName(source$variable_ts[[1]], variable)
+        if(!test) stop("Column named ", variable, " not found in source zones.")
+    }
+    
+    
     if(verbose) {
         msg <- paste0("Interpolating from ", nrow(source), " source ",
                       "zones to ", nrow(target), " target zones.")
@@ -68,15 +79,11 @@ interpolate_aw <- function(source,
     }
     
     
-    #############
+    # --------------------------------------------------------------------------
     # interpolate
     
     
-    
-    # 1. Intersect river network with union of basins, and intersect HS
-    # with the union of basins - this is to make sure that the runoff 
-    # units is consistent with the basins. If they are not, weights
-    # will not equal to 1 for every runoff unit.
+    # remove target zones not in source
     select <- sf::st_intersects(target, 
                                 sf::st_geometry(sf::st_union(source)), 
                                 sparse=FALSE)
@@ -91,15 +98,95 @@ interpolate_aw <- function(source,
                                                  pycno = pycnophylactic,
                                                  dasy = dasymetric,
                                                  intensive = intensive,
+                                                 n = pycno_iter,
                                                  weights = NULL)
     
-    output <- downscale_runoff(source,
+    
+    
+    output <- dasymetric::downscale_runoff(source,
                                target,
                                weights,
-                               pycno = FALSE,
-                               n = 10,
+                               variable,
+                               pycno = pycno_each_ts,
+                               n = pycno_iter,
                                dasy = dasymetric)
     
     
     return(output)
+}
+
+
+interpolate_dm <- function(source, 
+                           target,
+                           variable,
+                           dasymetric = NULL,
+                           verbose=FALSE) {
+  
+  # --------------------------------------------------------------------------
+  # test
+  
+  test <- inherits(source, "zones")
+  if(!test) stop("source should be of class 'zones', obtained with function ",
+                 "source_from_raster() or create_source()")
+  
+  test <- inherits(target, "zones")
+  if(!test) stop("target should be of class 'zones', obtained with function ",
+                 "create_target()")
+  
+  
+  #### TODO: TEST VARIABLE INPUT
+  
+  test <- hasName(source, variable) 
+  if(!test) {
+    test <- hasName(source$variable_ts[[1]], variable)
+    if(!test) stop("Column named ", variable, " not found in source zones.")
+  }
+  
+  
+  if(verbose) {
+    msg <- paste0("Interpolating from ", nrow(source), " source ",
+                  "zones to ", nrow(target), " target zones.")
+    message(msg)
+  }
+  
+  
+  # --------------------------------------------------------------------------
+  # interpolate
+  
+  
+  # remove target zones not in source
+  select <- sf::st_intersects(target, 
+                              sf::st_geometry(sf::st_union(source)), 
+                              sparse=FALSE)
+  target <- target[select,]
+  
+  
+  # 2. compute basin weights
+  if(verbose) message("Computing weights..")
+  
+  # weights <- dasymetric:::compute_area_weights(source,
+  #                                              target,
+  #                                              pycno = pycnophylactic,
+  #                                              dasy = dasymetric,
+  #                                              intensive = intensive,
+  #                                              n = pycno_iter,
+  #                                              weights = NULL)
+  # 
+  # 
+  # 
+  # output <- dasymetric::downscale_runoff(source,
+  #                                        target,
+  #                                        weights,
+  #                                        variable,
+  #                                        pycno = pycno_each_ts,
+  #                                        n = pycno_iter,
+  #                                        dasy = dasymetric)
+  
+  output <- do_interpolation_dm(source,
+                                target,
+                                dasy = dasymetric,
+                                verbose = verbose)
+  
+  
+  return(output)
 }

@@ -9,9 +9,11 @@ Estimates runoff in either}
 interpolate_aw(
   source,
   target,
+  variable,
   dasymetric = NULL,
   pycnophylactic = NULL,
-  n = 20,
+  pycno_iter = 20,
+  pycno_each_ts = FALSE,
   intensive = NULL,
   aoi = NULL,
   verbose = FALSE
@@ -26,11 +28,8 @@ as the ancillary information in dasymetric mapping. If \code{NULL}
 pycnophylactic interpolation. If \code{NULL}, or if \code{is.null(basins)},
 not performed. See details.}
 
-\item{n}{Number of iterations when using pycnophylactic interpolation. 
-Default \code{25}.}
-
 \item{intensive}{Whether the pycnophylactic variable is intensive (density,
-like runoff in mm), or not (in which case it is extensive, or counts like
+like runoff in depth), or not (in which case it is extensive, or counts like
 runoff in volume).}
 
 \item{aoi}{An area of interest ('sf' polygon object) used to intersect 
@@ -44,6 +43,9 @@ of \code{basins}). Defaults to \code{NULL}.}
 \item{river}{An 'sf' linestring feature representing a river network.}
 
 \item{basins}{An 'sf' polygon object.}
+
+\item{n}{Number of iterations when using pycnophylactic interpolation. 
+Default \code{25}.}
 
 \item{weights}{Name of a column in \code{river} to be used directly as 
 weights. Defaults to \code{NULL}. See Details.}

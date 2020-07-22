@@ -31,9 +31,6 @@ create_source <- function(zones,
     
     # --------------------------------------------------------------------------
     # create output
-    
-    zones<- zones[order(zones$sourceID),] 
-    
     zones <- sf::st_as_sf(tibble::as_tibble(zones))
     zones <- dasymetric:::assign_class(zones, c("zones"))
     
@@ -72,8 +69,6 @@ create_target <- function(zones,
     
     # --------------------------------------------------------------------------
     # create output
-    
-    output <- zones[order(zones$targetID),] 
     
     zones <- sf::st_as_sf(tibble::as_tibble(zones))
     output <- assign_class(output, c("zones"))

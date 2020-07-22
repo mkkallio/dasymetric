@@ -43,7 +43,12 @@ collect_listc <- function(ts, acc = FALSE) {
             dates <- unidates %in% ts[[i]]$Date 
             act_ts[dates,i] <-unlist(ts[[i]][,tsi+1])
         }
-        output[[ names[tsi] ]] <- units::as_units(act_ts, unit)     
+        if(is.character(act_ts)) {
+            output[[ names[tsi] ]] <- act_ts
+        } else {
+            output[[ names[tsi] ]] <- units::as_units(act_ts, unit)
+        }
+        # output[[ names[tsi] ]] <- units::as_units(act_ts, unit)     
     }
     
     if(acc) {

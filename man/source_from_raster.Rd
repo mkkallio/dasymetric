@@ -6,7 +6,7 @@
 \usage{
 source_from_raster(
   rasters,
-  date,
+  date = NULL,
   timestep = NULL,
   unit = NULL,
   aoi = NULL,

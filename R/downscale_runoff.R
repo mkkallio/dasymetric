@@ -17,8 +17,6 @@
 #' @return The routed river network object with class \code{HS}, which has been 
 #'   enhanced with a runoff timeseries (list column \code{variable_ts}. Runoff is 
 #'   given in \eqn{m^3/s}.
-#' 
-#' @export
 downscale_runoff <- function(source,
                              target,
                              weights,
@@ -53,10 +51,10 @@ downscale_runoff <- function(source,
     }
     
     listc <- dasymetric:::spread_listc(QTS)
-    listc <- listc[order(as.numeric(names(listc)))]
+    # listc <- listc[order(as.numeric(names(listc)))]
     
     output <- target %>% 
-        dplyr::arrange(targetID) %>% 
+        # dplyr::arrange(targetID) %>% 
         tibble::add_column(variable_ts = listc) %>%
         tibble::as_tibble() %>%
         sf::st_as_sf()
@@ -116,7 +114,7 @@ downscale_with_weights <- function(source,
         
         unit <- units::deparse_unit(runoffTS)
         if(unit != "m3 s-1") {
-            runoffTS <- unit_conversion(runoffTS, 
+            runoffTS <- dasymetric:::unit_conversion(runoffTS, 
                                         unit,
                                         sourceareas[rep(1:ng, each = nts)])
         } 
@@ -212,8 +210,11 @@ downscale_pycno <- function(source, target, weights,
     pycno <- weights %>% 
                        tibble::add_column(outID = NA, orig_id = NA) %>%
                        dplyr::select(outID, orig_id, targetID, 
-                                     dplyr::everything()) %>%
-                       dplyr::rename(geometry = geom)
+                                     dplyr::everything()) 
+    test <- hasName(pycno, "geom")
+    if(test) pycno <- dplyr::rename(pycno, geometry = geom)
+    
+                       
     
     #identify neighbours
     touching <- sf::st_touches(pycno)
@@ -232,9 +233,9 @@ downscale_pycno <- function(source, target, weights,
     nstep <- nrow(source$variable_ts[[1]])
     names <- colnames(source$variable_ts[[1]])
     nriver <- nrow(target)
-    rivers <- which(!is.na(pycno$riverID))
-    sourceareas <- HS$source$area
-    unidates <- lapply(HS$source$variable_ts, function(x) x$Date) %>%
+    rivers <- which(!is.na(pycno$targetID))
+    sourceareas <- st_area(source)
+    unidates <- lapply(source$variable_ts, function(x) x$Date) %>%
         unlist %>%
         unique %>%
         lubridate::as_date()
@@ -243,43 +244,44 @@ downscale_pycno <- function(source, target, weights,
     
     total <- nmod-1
     if(verbose) message("Performing pycnophylactic downscaling..")
-    if(verbose) pb <- txtProgressBar(min = 0, max = total, style = 3)
+    
     
     # do for each timestep and each model, convert mm/s to m3/s?
     for(model in 2:nmod) {
         qts <- matrix(NA, nrow = nstep, ncol = nriver)
-        colnames(qts) <- HS$target$riverID
+        colnames(qts) <- target$targetID
         name <- names[model]
         
+        if(verbose) pb <- txtProgressBar(min = 0, max = nstep, style = 3)
         for(tstep in 1:nstep) {
             
-            r_source <- sapply(HS$source$variable_ts, 
+            r_source <- sapply(source$variable_ts, 
                              function(x) dplyr::pull(x[tstep, model]))
             
-            r_pycno <- iterate_pycno(pycno, dasy, touching, boundary,
+            r_pycno <- dasymetric:::iterate_pycno(pycno, dasy, touching, boundary,
                                      r_source, sourceareas, n, convert=TRUE)
 
             if(convert) r_pycno <- r_pycno * pycno$target_area / 1000
             
             for(i in seq_along(r_pycno)) {
-                where <- which(HS$target$riverID == pycno$riverID[i])
+                where <- which(target$targetID == pycno$targetID[i])
                 if(length(where) == 0) next
                 qts[tstep, where] <- sum(qts[tstep, where], 
                                          r_pycno[i],
                                          na.rm=TRUE) 
             }
-            
+            if (verbose) setTxtProgressBar(pb, tstep)
         }
         
         qts <- data.frame(qts)
-        colnames(qts) <- HS$target$riverID
+        colnames(qts) <- target$targetID
         qts <- tibble::add_column(qts, Date = unidates, .before=1)
         QTS[[ name ]] <- qts
         
-        if (verbose) setTxtProgressBar(pb, model)
+        close(pb)
     }
-    close(pb)
-    if (verbose) message("Processing output..")
+
+    # if (verbose) message("Processing output..")
     
     return(QTS)
     
@@ -298,8 +300,8 @@ iterate_pycno <- function(p_obj, dasy = NULL, touching, boundary,
     r_prev <- r_orig
     r_curr <- r_orig
     
-    iter <- which(!is.na(p_obj$riverID))
-    remove <- which(is.na(p_obj$riverID))
+    iter <- which(!is.na(p_obj$targetID))
+    remove <- which(is.na(p_obj$targetID))
     p_obj$sourceID[remove] <- NA
     
     # iterate
@@ -328,7 +330,8 @@ iterate_pycno <- function(p_obj, dasy = NULL, touching, boundary,
     }
     
     # if dasymetric variable is provided
-    if(!is.null(dasy)) {
+    test <- is.null(dasy)
+    if(!test) {
        r_curr <- r_curr * dasy
         
         # same as above

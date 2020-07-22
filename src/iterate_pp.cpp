@@ -1,5 +1,6 @@
 //#include <Rcpp.h>
 //using namespace Rcpp;
+
 /*
 // [[Rcpp::export]]
 NumericVector fix_error(NumericVector max_err, NumericVector new_err,  int n) {
@@ -39,8 +40,9 @@ NumericVector fix_error(NumericVector max_err, NumericVector new_err,  int n) {
     }
     return fixed_err;
 }
-
-
+ 
+*/
+/*
 // [[Rcpp::export]]
 NumericVector iterate_pp(List p_obj, 
                          NumericVector dasy, 
@@ -52,9 +54,12 @@ NumericVector iterate_pp(List p_obj,
                          bool convert) { 
      
      // helping variables
-     int size = p_obj.size()
+     int size = p_obj.size();
     
+    return p_obj;
 }
+
+
 
 iterate_pycno <- function(p_obj, dasy = NULL, touching, boundary, 
                           r_grid, gridareas, n, convert=TRUE) {

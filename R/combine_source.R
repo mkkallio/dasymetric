@@ -21,13 +21,16 @@ combine_zones <- function(zones,
                           aoi = NULL, 
                           names=NULL) {
     
+    # --------------------------------------------------------------------------
+    # test input
+    
     test <- inherits(zones, "zones")
     if(!test) {
         stop("First input should be of class 'zones'")
     }
 
     if (is.null(from)) {
-        from <- raster_to_HS(rasters, unit, date, timestep, aoi, names)
+        from <- source_from_raster(rasters, unit, date, timestep, aoi, names)
     }
     
     test <- inherits(from, "zones")
@@ -35,8 +38,8 @@ combine_zones <- function(zones,
         stop("'from' input should be of class 'zones'")
     }
     
-    # test which elements of from are included in HS
-    common_elements <- sf::st_equals(from, HS, sparse = FALSE)
+    # test which elements of from are included in zones
+    common_elements <- sf::st_equals(from, zones, sparse = FALSE)
     
     test <- colSums(common_elements)
     if(!all(test == 1)) {
@@ -46,7 +49,20 @@ combine_zones <- function(zones,
     
     # test that both zones and from have variable ts
     test <- hasName(zones, "variable_ts") & hasName(from, "variable_ts")
+
+    # TODO: ADD CONSEQUENCE
     
+    
+    test <- hasName(zones, "sourceID") 
+    if(test) type <- "sourceID" else if(hasName(zones, "targetID")) {
+        type <- "targetID"
+    } else stop("No sourceID or targetID found in zones.")
+    
+    
+    
+    
+    # --------------------------------------------------------------------------
+    # process
     
     # add timeseries from variable_ts in 'from' to variable_ts in 'zones'
     # for all elements in common (same ID)
@@ -62,21 +78,22 @@ combine_zones <- function(zones,
             if(test) warning("Variable timeseries to be combined contain same
                          names - possible duplicated timeseries.")
             
-            variable_ts <- merge(zones$variable_ts[[gid]], 
+            variable_ts <- dplyr::left_join(zones$variable_ts[[gid]], 
                                  fr,
-                                 by="Date",
-                                 all.x=TRUE)
+                                 by="Date")
             zones$variable_ts[[gid]] <- variable_ts
             
         } 
     }
     
-    variable_ts <- zones$variable_ts
     
-    zones <- merge(zones[, -c("variable_ts")],
-                   sf::st_set_geometry(from[, -c("variable_ts")], NULL),
-                   by="sourceID")
-    zones["variable_ts"] <- variable_ts
+    # combine other variables
+    variable_ts <- zones$variable_ts
+    zones <- dplyr::left_join(select(zones, -variable_ts),
+                              sf::st_set_geometry(select(from, -variable_ts),
+                                                  NULL),
+                              by=type)
+    zones$variable_ts <- variable_ts
     
        
     zones <- assign_class(zones, c("zones"))

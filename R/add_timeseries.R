@@ -60,59 +60,84 @@ add_timeseries <- function(zones,
         timeseries[,ind] <- lubridate::as_date(unlist(timeseries[,ind]))
     }
     
+    # test if source or target
+    test <- hasName(zones, "sourceID")
+    if(test) {
+        idcol <- which(colnames(zones) == "sourceID")
+    } else if(hasName(zones, "targetID")) {
+        idcol <- which(colnames(zones) == "targetID")
+    } else {
+        stop("No sourceID or targetID found in zones")
+    }
 
     # test that all IDs are accounted for
     test <- is.null(IDs)
     if(test) {
         IDs <- colnames(timeseries)
         i <- which(tolower(IDs) == "date")
+        IDs <- IDs[-i]
         
-        test <- all(zones$sourceID %in% IDs[-i])
+        test <- all(dplyr::pull(zones, idcol) %in% IDs)
         if(!test) stop("timeseries does not include all source zones.")
-        
+    
     } else {
         test <- all(zones$sourceID %in% IDs)
         if(!test) stop("timeseries does not include all source zones.")
     }
     
     # reorder columns so that date is first
-    ind <- which(tolower(IDs) == "date")
+    ind <- which(tolower(colnames(timeseries)) == "date")
     new_order <- c(ind, c(1:ncol(timeseries))[-ind])
     timeseries <- timeseries[,new_order]
+    
+    
+    test <- is.null(unit) 
+    if(test) unit <- 1
     
     # --------------------------------------------------------------------------
     # process
     
     
     # convert NaNs to NA set unit if provided
-    test <- is.null(unit) 
-    if(test) {
-        for(i in 1:ncol(timeseries)) {
-            if( tolower(colnames(timeseries)[i]) == "date") next
-            ts <- timeseries[,i]
-            ts[is.nan(ts)] <- NA
-            timeseries[,i] <- ts
-        }
-    } else {
-        for(i in 1:ncol(timeseries)) {
-            if( tolower(colnames(timeseries)[i]) == "date") next
-            ts <- timeseries[,i]
-            ts[is.nan(ts)] <- NA
+
+
+    for(i in 1:ncol(timeseries)) {
+        if( tolower(colnames(timeseries)[i]) == "date") next
+        ts <- dplyr::pull(timeseries, i)
+        ts[is.nan(ts)] <- NA
+        if(!is.character(ts) | is.factor(ts)) {
             ts <- units::as_units(ts, unit)
-            timeseries[,i] <- ts
         }
+        timeseries[,i] <- ts
     }
+
+    # convert to tibble and to a list column
+    test <- inherits(timeseries, "tbl_df") 
+    if(!test) timeseries <- tibble::as_tibble(timeseries)
+    
+    timeseries <- lapply(2:ncol(timeseries), function(i) {
+        x <- timeseries[,c(1,i)]
+        colnames(x)[2] <- name
+        return(x)
+    })
+    names(timeseries) <- IDs
+    
     
     # test if zones already has some variable_timeseries
     test <- hasName(zones, "variable_ts")
     if(test) {
         variable_ts <- zones$variable_ts
         
-        ### test here that variable_ts and timeseries have the same dates
-        # and warn if not
-        
-        variable_ts <- merge(variable_ts, timeseries, by="Date")
-        
+        for(i in seq_along(variable_ts)) {
+            
+            ### test here that variable_ts and timeseries have the same dates
+            # and warn if not
+            ind <- which(IDs == dplyr::pull(zones, idcol)[i])
+            
+            variable_ts[[i]] <- dplyr::left_join(variable_ts[[i]], 
+                                                 timeseries[[ind]], 
+                                                 by="Date")
+        }
     } else {
         variable_ts <- timeseries
     }
@@ -120,10 +145,10 @@ add_timeseries <- function(zones,
 
     # --------------------------------------------------------------------------
     # output
-    variable_ts <- list(variable_ts)
-    names(variable_ts) <- name
-    listc <- dasymetric:::spread_listc(variable_ts)
-    zones$variable_ts <- listc
+    # variable_ts <- list(variable_ts)
+    # names(variable_ts) <- name
+    # listc <- dasymetric:::spread_listc(variable_ts)
+    zones$variable_ts <- variable_ts
     
     # zones <- reorder_cols(HS)
     zones <- assign_class(zones, "zones")
