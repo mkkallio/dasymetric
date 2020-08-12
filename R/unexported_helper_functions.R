@@ -1,21 +1,3 @@
-#helper function to compute weights for line segments
-compute_segment_weights <- function(segments, variable) {
-    weights <- rep(0, length(segments))
-    n <- sum(variable[segments])
-    weights[segments] <- variable[segments]/n
-    return(weights)
-}
-
-compute_dasymetric_weights <- function(segments, arealen, variable) {
-    weights <- rep(0, length(variable))
-    arealenvar <- arealen*variable
-    denom <- sum(arealen[segments]*variable[segments])
-    weights[segments] <- arealenvar[segments]/denom
-    return(weights)
-} 
-
-
-
 collect_listc <- function(ts, acc = FALSE) {
     
     Date <- NULL
@@ -124,49 +106,6 @@ assign_class <- function(obj, class) {
     }
 }
 
-# if object has "HS" attributes, edit those without NULL
-# if object doesnt have "HS" attributes, initialize it with provided values
-mod_HS_attributes <- function(HS, next_col = NA, prev_col = NA, 
-                              col = NULL) {
-    
-    if(is.null(col)) {
-        test <- is.null(base::attr(HS, "HS", exact = TRUE))
-        if(test) {
-            att <- c(next_col = next_col, 
-                     prev_col = prev_col)
-            base::attr(HS, "HS") <- att
-        } else {
-            att <- base::attr(HS, "HS", exact = TRUE)
-            
-            if(!is.na(next_col)) att["next_col"] <- next_col
-            if(!is.na(prev_col)) att["prev_col"] <- prev_col
-            
-            base::attr(HS, "HS") <- att
-        }
-        return(HS)
-    } else {
-        test <- hasName(HS, col)
-        if(!test) stop("Couldn't find column ", col, " in HS input.")
-        
-        ind <- which(colnames(HS) == col)
-        test <- is.null(base::attr(HS[[ind]], "HS", exact = TRUE))
-        if(test) {
-            att <- c(next_col = next_col, 
-                     prev_col = prev_col)
-            base::attr(HS[[ind]], "HS") <- att
-        } else {
-            att <- base::attr(HS[[ind]], "HS", exact = TRUE)
-            
-            if(!is.na(next_col)) att["next_col"] <- next_col
-            if(!is.na(prev_col)) att["prev_col"] <- prev_col
-            
-            base::attr(HS[[ind]], "HS") <- att
-        }
-        return(HS)
-    }
-    
-    
-}
 # 
 get_HS_attr <- function(HS) {
     return(base::attr(HS, "HS", exact = TRUE))

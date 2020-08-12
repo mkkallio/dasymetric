@@ -1,15 +1,4 @@
-#' Constructs a \code{zones} object from given input
-#' 
-#' Creates a \code{zones} object from sf polygon representing the spatial units 
-#' of data. 
-#' 
-#' @param zones An \code{sf} object containing polygon representation of the 
-#'   spatial units.
-#' @param ID Column name with unique IDs.
-#'  
-#' @return Returns a data.frame with an added class \code{zones}, and column
-#'   \code{sourceID}
-#' 
+
 #' @export
 create_source <- function(zones, 
                           ID = "ID") {

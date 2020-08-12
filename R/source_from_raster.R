@@ -1,25 +1,4 @@
-#' Create HS from a raster
-#' 
-#' Polygonizes a raster and adds the values in the raster stack to a data frame
-#' in list column \code{runoff_ts}.
-#'
-#' @param rasters A raster object, or a list of raster objects, or a list of
-#'   URIs to files readable by \code{raster} package.
-#' @param unit Unit of the timeseries, coercable with \code{units::set_units()}.
-#' @param date Date of the first layer in \code{raster}, or a vector of dates 
-#'   with the length of layers in \code{raster}, or a list of vectors of dates,
-#'   corresponding to the dates in each raster layer.
-#' @param timestep Length of timestep in raster. Currently supporting 
-#'   \code{"hour"}, \code{"day"}, \code{"month"}. Only needed if \code{date} is
-#'   not a vector of dates.
-#' @param aoi Area of interest as an 'sf' polygon object, 
-#'   'SpatialPolygons', or 'SpatialPolygonsDataFrame'. Optional, but 
-#'   recommended for all applications.
-#' @param names A name (names) for the runoff timeserie(s).
-#' @param verbose Print progress indication or not.
-#'
-#' @return See \code{\link{create_HS}}.
-#'   
+
 #' @export
 source_from_raster <- function(rasters, 
                                date = NULL, 
@@ -248,3 +227,24 @@ source_from_raster <- function(rasters,
     return(output)
 }
 
+#' @export
+target_from_raster <- function(rasters, 
+                               date = NULL, 
+                               timestep = NULL, 
+                               unit = NULL,
+                               aoi = NULL, 
+                               names = NULL,
+                               verbose = FALSE) {
+    
+    target <- source_from_raster(rasters, 
+                                 date, 
+                                 timestep, 
+                                 unit,
+                                 aoi, 
+                                 names,
+                                 verbose)
+    
+    target <- dplyr::rename(target, targetID = sourceID)
+    
+    return(target)
+}

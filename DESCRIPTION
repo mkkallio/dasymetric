@@ -12,9 +12,11 @@ Imports:
     dplyr,
     units,
     sf,
+    raster,
     lubridate,
     tibble
 LinkingTo: Rcpp
 Suggests: 
     testthat
+Encoding: UTF-8
 RoxygenNote: 7.1.1

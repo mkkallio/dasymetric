@@ -28,14 +28,31 @@ combine_zones <- function(zones,
     if(!test) {
         stop("First input should be of class 'zones'")
     }
+    
+    test <- hasName(zones, "sourceID") 
+    if(test) type <- "sourceID" else if(hasName(zones, "targetID")) {
+        type <- "targetID"
+    } else stop("No sourceID or targetID found in zones.")
 
     if (is.null(from)) {
-        from <- source_from_raster(rasters, unit, date, timestep, aoi, names)
+        if(type == "sourceID") {
+            from <- source_from_raster(rasters, unit, date, 
+                                       timestep, aoi, names)
+        } else {
+            from <- target_from_raster(rasters, unit, date, 
+                                       timestep, aoi, names)
+        }
+        
     }
-    
     test <- inherits(from, "zones")
     if(!test) {
         stop("'from' input should be of class 'zones'")
+    }
+    
+    test <- hasName(from, type)
+    if(!test) {
+        stop("Cannot combine source zones with target zones. Please check ",
+             "that both 'zones' and 'from' input are of the same type.")
     }
     
     # test which elements of from are included in zones
@@ -53,10 +70,7 @@ combine_zones <- function(zones,
     # TODO: ADD CONSEQUENCE
     
     
-    test <- hasName(zones, "sourceID") 
-    if(test) type <- "sourceID" else if(hasName(zones, "targetID")) {
-        type <- "targetID"
-    } else stop("No sourceID or targetID found in zones.")
+    
     
     
     

@@ -1,22 +1,4 @@
-#' Adds observation timeseries to a 'HS' object
-#' 
-#' Adds observation timeseries to a HS object. This is needed in order to 
-#' evaluate performance of downscaled timeseries, or to perform data assimilation
-#' combining several downscaled times.
-#' 
-#' @param zones An \code{zones} object.
-#' @param timeseries a data.frame with observations. Must contain column 
-#'   \code{Date}.
-#' @param unit The unit of values in \code{timeseries}.
-#' @param name Name of the variable
-#' @param IDs A vector of riverID of the river segments of the columns
-#'   in timeseries. If not provided, IDs will be taken from the column names in
-#'   \code{timeseries}.
-#'  
-#' @return Returns the \code{HS} object with added list column 
-#'   \code{observation_ts} containing a timeseries, and column 
-#'   \code{observation_station} containing the name of observation stations.
-#' 
+
 #' @export
 add_timeseries <- function(zones, 
                            timeseries,

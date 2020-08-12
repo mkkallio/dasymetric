@@ -19,25 +19,6 @@ combine_zones(
 \item{zones}{an existing \code{zones} object.}
 
 \item{from}{A \code{zones} object to add from. Optional.}
-
-\item{rasters}{A raster object, or a list of raster objects, or a list of
-URIs to files readable by \code{raster} package.}
-
-\item{unit}{Unit of the timeseries, coercable with \code{units::set_units()}.}
-
-\item{date}{Date of the first layer in \code{raster}, or a vector of dates 
-with the length of layers in \code{raster}, or a list of vectors of dates,
-corresponding to the dates in each raster layer.}
-
-\item{timestep}{Length of timestep in raster. Currently supporting 
-\code{"hour"}, \code{"day"}, \code{"month"}. Only needed if \code{date} is
-not a vector of dates.}
-
-\item{aoi}{Area of interest as an 'sf' polygon object, 
-'SpatialPolygons', or 'SpatialPolygonsDataFrame'. Optional, but 
-recommended for all applications.}
-
-\item{names}{A name (names) for the runoff timeserie(s).}
 }
 \value{
 Returns the input \code{zones} object with added columns in 
